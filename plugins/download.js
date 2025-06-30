@@ -79,7 +79,7 @@ if (!global.__downloadurl_handler) {
         await connRef.sendMessage(chat, { react: { text: "⏬", key: msg.key }});
         await connRef.sendMessage(chat, {
           document: { url },
-          mimetype: "application/octet-stream",
+          mimetype: "video/mp4",
           fileName: `File_${index + 1}`,
           caption: `*📥 Downloaded File*\n\nSource: ${url}`
         }, { quoted: msg });
