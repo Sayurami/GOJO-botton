@@ -7,7 +7,7 @@ const { runtime } = require('../lib/functions');
 
 
 cmd({
-    pattern: "menu",
+    pattern: "menu2",
     react: "📜",
     alias: ["panel", "commands"],
     desc: "Get Bot Menu",
