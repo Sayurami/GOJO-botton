@@ -5,7 +5,7 @@ const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, fetchJson , runt
 cmd({
     pattern: "menu",
     react: "📂",
-    prefix: "/"
+    prefix: "/",
     desc: "Check bot Commands.",
     category: "main",
     filename: __filename
