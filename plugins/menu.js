@@ -1,11 +1,11 @@
 const { cmd } = require('../lib/command');
-const config = require('../settings');
 const os = require('os');
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, fetchJson , runtime ,sleep } = require('../lib/functions')
 
 cmd({
     pattern: "menu",
     react: "📂",
+    prefix: "/"
     desc: "Check bot Commands.",
     category: "main",
     filename: __filename
