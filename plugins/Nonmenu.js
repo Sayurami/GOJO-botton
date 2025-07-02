@@ -1,4 +1,4 @@
-const config = require('../config')
+const config = require('../settings')
 const { cmd, commands } = require('../lib/command')
 const imageUrl = 'https://raw.githubusercontent.com/gojo18888/Photo-video-/refs/heads/main/file_000000003a2861fd8da00091a32a065a.png';
 
