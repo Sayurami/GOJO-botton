@@ -1,6 +1,8 @@
 const { cmd } = require('../lib/command');
 const os = require('os');
 const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, fetchJson , runtime ,sleep } = require('../lib/functions')
+const config = require('../settings');
+
 
 cmd({
     pattern: "menu",
