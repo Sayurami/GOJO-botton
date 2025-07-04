@@ -23,7 +23,7 @@ cmd({
 ╰─────────────────────●●►
  *║  🎥❮❮  𝗚𝗢𝗝𝗢 𝗠𝗗 𝗩1 𝗠𝗘𝗡𝗨 𝗟𝗜𝗦𝗧❯❯  🎥 ║*`;
 
-        let imageUrl = "https://raw.githubusercontent.com/gojo18888/Photo-video-/refs/heads/main/file_000000003a2861fd8da00091a32a065a.png";
+        let imageUrl = "https://raw.githubusercontent.com/Sayurami/GOJO-botton/refs/heads/main/file_00000000f76c61f88a35663bb55c3102.png";
 
         let vpsOptions = [
             { title: "ᴏᴡɴᴇʀ menu 🇱🇰", description: "Bot Owner Only Commands", id: `${prefix}ownermenu` },
