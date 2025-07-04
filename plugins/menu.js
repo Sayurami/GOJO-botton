@@ -15,7 +15,7 @@ cmd({
     try {
 
         let teksnya = `
- Hello  Ｉ ａｍ   𝗚𝗢𝗝𝗢 𝗠𝗗 𝗩1 ❯❯  
+ 𝗛𝗘𝗟𝗟𝗢 𝗜 𝗔𝗠 𝗚𝗢𝗝𝗢 𝗠𝗗 𝗩2 ❯❯  
 ╭────────────────────●●►
 | *🛠️  𝙑𝙀𝙍𝙎𝙄𝙊𝙉:* ${require("../package.json").version}
 | *📡  𝙈𝙀𝙈𝙊𝙍𝙔:* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB
@@ -48,7 +48,7 @@ cmd({
 
 cmd({
     pattern: "dlmenu",
-    react: "🎬",
+    react: "♻️",
     desc: "Download Menu Text List",
     category: "download",
     filename: __filename
@@ -101,7 +101,7 @@ _ඔබට අවශ්‍ය link එකක් හෝ keyword එකක් එ�
                 nativeFlowInfo: {
                     name: "single_select",
                     paramsJson: JSON.stringify({
-                        title: "Choose Menu Tab 📖",
+                        title: "🚨Choose Menu Tab🚨",
                         sections: buttonSections
                     })
                 }
