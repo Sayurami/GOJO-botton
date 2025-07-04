@@ -1,6 +1,8 @@
 const { cmd } = require('../lib/command');
 const axios = require('axios');
 const yts = require('yt-search');
+const config = require('../settings');
+
 
 let connRef = null;
 const cache = new Map(); // session: chat → video list
