@@ -46,7 +46,7 @@ cmd({
       title: "🔍 Your Search Result",
       buttonText: "🎧 View Songs",
       sections: [{
-        title: "Search Results",
+        title: "Search Results🚨",
         rows
       }]
     };
