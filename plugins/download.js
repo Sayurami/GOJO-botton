@@ -1,4 +1,5 @@
 const { cmd } = require('../lib/command');
+const config = require('../settings');
 
 let connRef = null;
 const cache = new Map(); // chat → url list
