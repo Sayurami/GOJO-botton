@@ -45,7 +45,36 @@ cmd({
                 rows: vpsOptions
             }
         ];
+cmd({
+    pattern: "ownermenu",
+    react: "♻️",
+    desc: "owner Menu Text List",
+    category: "list",
+    filename: __filename
+}, async (conn, mek, m, { reply, prefix }) => {
+    try {
+        const text = `✳️ *GOJO OWNER MENU* 🎬
 
+ඔබට පහත commands භාවිතා කර owner menu ලබාගන්න පුළුවන්:
+
+╭─────────────⭓
+│ 1️⃣ get jid all
+│ ➤ ${prefix}jid
+│
+│ 2️⃣ system 
+│ ➤ ${prefix}system 
+│
+╰─────────────⭓
+
+_ඔබට අවශ්‍ය link එකක් හෝ keyword එකක් එක්කර command එක යොදන්න_`;
+
+        await reply(text);
+    } catch (e) {
+        console.error(e);
+        reply(`Error: ${e.message}`);
+    }
+});
+        
 cmd({
     pattern: "dlmenu",
     react: "♻️",
