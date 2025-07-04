@@ -1,97 +1,91 @@
 const { cmd } = require('../lib/command');
 const config = require('../settings');
 
-let connRef = null;
-const cache = new Map(); // chat → url list
+// Map<chat, { urls: string[], expires: number }>
+const sessionCache = new Map();
 
 cmd({
   pattern: "download",
   alias: ["durl"],
-  desc: "Send list of direct URLs to download as document",
+  desc: "🔰 Direct URL එකකින් File එකක් Download කරන්න",
   react: "🔰",
   category: "download",
   filename: __filename
 }, async (conn, mek, m, { from, args, reply }) => {
   try {
-    connRef = conn;
-
-    if (args.length === 0) {
-      return reply("❗ Please provide one or more direct URLs separated by space.\n*Example:* `.downloadurl https://example.com/file1.pdf https://example.com/file2.mp4`");
+    if (!args.length) {
+      return reply("❗ කරුණාකර URL එකක් හෝ කිහිපයක් space වලින් වෙන්කර සපයන්න.\n\n*උදාහරණයක්:* `.download https://example.com/video1.mp4 https://example.com/video2.mp4`");
     }
 
-    const urls = args.filter(link => link.startsWith("http"));
-    if (urls.length === 0) return reply("❗ No valid URLs detected.");
+    const urls = args.filter(x => x.startsWith("http"));
+    if (!urls.length) return reply("❗ වලංගු URL කිසිවක් සොයාගත නොහැක.");
+
+    // Session එක 5 minutes වලට expire වෙයි
+    sessionCache.set(from, {
+      urls,
+      expires: Date.now() + 5 * 60 * 1000
+    });
 
     const rows = urls.map((link, i) => ({
-      title: `File ${i + 1}`,
+      title: `📄 File ${i + 1}`,
       description: link.length > 40 ? link.slice(0, 40) + "…" : link,
-      rowId: `dlurl_${i}`
+      rowId: `download_select_${i}`
     }));
 
-    cache.set(from, urls);
+    await conn.sendMessage(from, {
+      text: "*📥 Download URLs List*",
+      footer: "ඔබට බාගත කිරීමට අවශ්‍ය File එක තෝරන්න.",
+      title: "🔗 URLs List",
+      buttonText: "📂 File එකක් තෝරන්න",
+      sections: [{ title: "📁 Available Files", rows }]
+    }, { quoted: mek });
 
-    const listMsg = {
-      text: `*📥 URL List*\n\nSelect a file to download.`,
-      footer: "© Gojo-MD | Downloader",
-      title: "🔗 Your Download Links",
-      buttonText: "📂 View URLs",
-      sections: [{
-        title: "URL List",
-        rows
-      }]
-    };
-
-    await conn.sendMessage(from, listMsg, { quoted: mek });
     await conn.sendMessage(from, { react: { text: "✅", key: mek.key }});
-
-  } catch (e) {
-    console.error("downloadurl error:", e);
+  } catch (err) {
+    console.error("Download command error:", err);
     await conn.sendMessage(from, { react: { text: "❌", key: mek.key }});
-    reply("❌ Error processing URLs.");
+    reply("❌ වැරදික් ඇති වුණා. නැවත උත්සාහ කරන්න.");
   }
 });
 
-// List handler
-if (!global.__downloadurl_handler) {
-  global.__downloadurl_handler = true;
+// 🟢 Handle list response
+cmd({
+  on: "message"
+}, async (conn, mek, m) => {
+  const listResp = m.message?.listResponseMessage;
+  if (!listResp) return;
 
-  const { setTimeout } = require('timers');
+  const chat = m.key.remoteJid;
+  const sel = listResp.singleSelectReply?.selectedRowId;
+  if (!sel?.startsWith("download_select_")) return;
 
-  function wait() {
-    if (!connRef) return setTimeout(wait, 500);
+  const index = Number(sel.split("_").pop());
+  const session = sessionCache.get(chat);
 
-    connRef.ev.on("messages.upsert", async ({ messages }) => {
-      const msg = messages?.[0];
-      if (!msg?.key || !msg.message) return;
-
-      const sel = msg.message.listResponseMessage?.singleSelectReply?.selectedRowId;
-      if (!sel || !sel.startsWith("dlurl_")) return;
-
-      const chat = msg.key.remoteJid;
-      const index = Number(sel.replace("dlurl_", ""));
-      const list = cache.get(chat);
-      if (!list || !list[index]) {
-        await connRef.sendMessage(chat, { text: "❌ Session expired. Please try again." }, { quoted: msg });
-        return;
-      }
-
-      const url = list[index];
-      try {
-        await connRef.sendMessage(chat, { react: { text: "⏬", key: msg.key }});
-        await connRef.sendMessage(chat, {
-          document: { url },
-          mimetype: "video/mp4",
-          fileName: `File_${index + 1}`,
-          caption: `*📥 Downloaded File*\n\nSource: ${url}`
-        }, { quoted: msg });
-        await connRef.sendMessage(chat, { react: { text: "✅", key: msg.key }});
-      } catch (e) {
-        console.error("downloadurl send error:", e);
-        await connRef.sendMessage(chat, { text: "❌ Failed to send file." }, { quoted: msg });
-        await connRef.sendMessage(chat, { react: { text: "❌", key: msg.key }});
-      }
-    });
+  if (!session || !session.urls[index] || Date.now() > session.expires) {
+    return await conn.sendMessage(chat, {
+      text: "❗ Session එක කල් ඉකුත් වී ඇත. කරුණාකර `.download` command එක නැවත භාවිතා කරන්න."
+    }, { quoted: mek });
   }
 
-  wait();
-}
+  const url = session.urls[index];
+  try {
+    await conn.sendMessage(chat, { react: { text: "⏬", key: mek.key }});
+
+    await conn.sendMessage(chat, {
+      document: { url },
+      mimetype: "video/mp4", // 🟣 Assume MP4
+      fileName: `Video_${index + 1}.mp4`,
+      caption: `*📥 MP4 Video File*\n\n🔗 Source: ${url}`
+    }, { quoted: mek });
+
+    await conn.sendMessage(chat, { react: { text: "✅", key: mek.key }});
+  } catch (err) {
+    console.error("File send error:", err);
+    await conn.sendMessage(chat, {
+      text: "❌ File එක යැවීමේදී දෝෂයක් ඇතිවුණා.",
+      quoted: mek
+    });
+    await conn.sendMessage(chat, { react: { text: "❌", key: mek.key }});
+  }
+});
