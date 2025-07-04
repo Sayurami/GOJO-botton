@@ -1,5 +1,6 @@
 const {cmd , commands} = require('../lib/command');
 const { fetchJson } = require('../lib/functions');
+const config = require('../settings');
 
 cmd({
     pattern: "download",
