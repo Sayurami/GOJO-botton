@@ -2,8 +2,9 @@ const { cmd } = require('../lib/command');
 const axios = require('axios');
 const config = require('../settings');
 
-let connRef = null;
-const cache = new Map(); // session: chat → result list
+let pastppConnRef = null;
+const pastppCache = new Map(); // chat → results
+const pastppDetailMap = new Map(); // messageId → details/options
 
 cmd({
   pattern: "pastpp",
@@ -14,8 +15,7 @@ cmd({
   filename: __filename
 }, async (conn, mek, m, { from, args, reply }) => {
   try {
-    connRef = conn;
-
+    pastppConnRef = conn;
     const query = args.join(" ").trim();
     if (!query) {
       await conn.sendMessage(from, { react: { text: "❌", key: mek.key }});
@@ -38,7 +38,7 @@ cmd({
       rowId: `pp_${i}`
     }));
 
-    cache.set(from, results); // store result session
+    pastppCache.set(from, results);
 
     const listMsg = {
       text: `*📄 Past Paper Search Results*\n\nSelect one to download below.`,
@@ -55,60 +55,104 @@ cmd({
     await conn.sendMessage(from, { react: { text: "✅", key: mek.key }});
   } catch (e) {
     console.error("pastpp error:", e);
-    await conn.sendMessage(from, { react: { text: "❌", key: mek.key }});
+    await pastppConnRef.sendMessage(from, { react: { text: "❌", key: mek.key }});
     reply("*ERROR ❗ Something went wrong.*");
   }
 });
 
-if (!global.__pastpp_list_handler) {
-  global.__pastpp_list_handler = true;
+if (!global.__pastppListHandler) {
+  global.__pastppListHandler = true;
 
   const { setTimeout } = require('timers');
 
-  function wait() {
-    if (!connRef) return setTimeout(wait, 500);
+  function waitForConn() {
+    if (!pastppConnRef) return setTimeout(waitForConn, 500);
 
-    connRef.ev.on("messages.upsert", async ({ messages }) => {
+    pastppConnRef.ev.on("messages.upsert", async ({ messages }) => {
       const msg = messages?.[0];
-      if (!msg?.key || !msg.message) return;
+      if (!msg || !msg.key || !msg.message) return;
 
-      const sel = msg.message.listResponseMessage?.singleSelectReply?.selectedRowId;
-      if (!sel || !sel.startsWith("pp_")) return;
+      const from = msg.key.remoteJid;
 
-      const chat = msg.key.remoteJid;
-      const index = Number(sel.replace("pp_", ""));
-      const list = cache.get(chat);
-      if (!list || !list[index]) {
-        await connRef.sendMessage(chat, { text: "❌ Session expired. Please search again." }, { quoted: msg });
+      // Button list selection
+      if (config.BUTTON === 'true' && msg.message.listResponseMessage) {
+        const selectedId = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
+        if (!selectedId || !selectedId.startsWith("pp_")) return;
+
+        const index = Number(selectedId.replace("pp_", ""));
+        const results = pastppCache.get(from);
+        if (!results || !results[index]) {
+          await pastppConnRef.sendMessage(from, { text: "❌ Session expired or invalid selection. Please search again." }, { quoted: msg });
+          return;
+        }
+
+        const info = results[index];
+
+        try {
+          await pastppConnRef.sendMessage(from, { react: { text: "⏬", key: msg.key }});
+          const dl = await axios.get(`https://api-pass.vercel.app/api/download?url=${encodeURIComponent(info.url)}`);
+
+          const file = dl.data?.download_info;
+          if (!file?.download_url) {
+            return pastppConnRef.sendMessage(from, { text: "❌ Download link not found!" }, { quoted: msg });
+          }
+
+          await pastppConnRef.sendMessage(from, {
+            document: { url: file.download_url },
+            mimetype: 'application/pdf',
+            fileName: file.file_name || "pastpaper.pdf",
+            caption: `*📄 ${file.file_title || info.title}*\n\nSource: ${info.url}\n_Powered by sayura_`
+          }, { quoted: msg });
+
+          await pastppConnRef.sendMessage(from, { react: { text: "✅", key: msg.key }});
+        } catch (e) {
+          console.error("pastpp download error:", e);
+          await pastppConnRef.sendMessage(from, { text: "❌ Failed to download the file." }, { quoted: msg });
+          await pastppConnRef.sendMessage(from, { react: { text: "❌", key: msg.key }});
+        }
         return;
       }
 
-      const info = list[index];
+      // NUMBERED MODE for button=false, user replies with number to download
+      if (config.BUTTON !== 'true' && msg.message.extendedTextMessage) {
+        const userInput = (msg.message.extendedTextMessage.text || '').trim();
+        const results = pastppCache.get(from);
+        if (!results) return;
 
-      try {
-        await connRef.sendMessage(chat, { react: { text: "⏬", key: msg.key }});
-        const dl = await axios.get(`https://api-pass.vercel.app/api/download?url=${encodeURIComponent(info.url)}`);
-
-        const file = dl.data?.download_info;
-        if (!file?.download_url) {
-          return connRef.sendMessage(chat, { text: "❌ Download link not found!" }, { quoted: msg });
+        const idx = parseInt(userInput) - 1;
+        if (isNaN(idx) || !results[idx]) {
+          await pastppConnRef.sendMessage(from, { text: "❌ Invalid number. Please reply with a valid number for the past paper!" }, { quoted: msg });
+          return;
         }
 
-        await connRef.sendMessage(chat, {
-          document: { url: file.download_url },
-          mimetype: 'application/pdf',
-          fileName: file.file_name || "pastpaper.pdf",
-          caption: `*📄 ${file.file_title || info.title}*\n\nSource: ${info.url}\n_Powered by sayura_`
-        }, { quoted: msg });
+        const info = results[idx];
 
-        await connRef.sendMessage(chat, { react: { text: "✅", key: msg.key }});
-      } catch (e) {
-        console.error("pastpp download error:", e);
-        await connRef.sendMessage(chat, { text: "❌ Failed to download the file." }, { quoted: msg });
-        await connRef.sendMessage(chat, { react: { text: "❌", key: msg.key }});
+        try {
+          await pastppConnRef.sendMessage(from, { react: { text: "⏬", key: msg.key }});
+          const dl = await axios.get(`https://api-pass.vercel.app/api/download?url=${encodeURIComponent(info.url)}`);
+
+          const file = dl.data?.download_info;
+          if (!file?.download_url) {
+            return pastppConnRef.sendMessage(from, { text: "❌ Download link not found!" }, { quoted: msg });
+          }
+
+          await pastppConnRef.sendMessage(from, {
+            document: { url: file.download_url },
+            mimetype: 'application/pdf',
+            fileName: file.file_name || "pastpaper.pdf",
+            caption: `*📄 ${file.file_title || info.title}*\n\nSource: ${info.url}\n_Powered by sayura_`
+          }, { quoted: msg });
+
+          await pastppConnRef.sendMessage(from, { react: { text: "✅", key: msg.key }});
+        } catch (e) {
+          console.error("pastpp download error:", e);
+          await pastppConnRef.sendMessage(from, { text: "❌ Failed to download the file." }, { quoted: msg });
+          await pastppConnRef.sendMessage(from, { react: { text: "❌", key: msg.key }});
+        }
+        return;
       }
     });
   }
 
-  wait();
+  waitForConn();
 }
