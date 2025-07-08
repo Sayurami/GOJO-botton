@@ -1,162 +1,128 @@
 const { cmd } = require('../lib/command');
-const os = require('os');
-const { getBuffer, getGroupAdmins, getRandom, h2k, isUrl, Json, fetchJson , runtime ,sleep } = require('../lib/functions')
 const config = require('../settings');
+const imageUrl = "https://raw.githubusercontent.com/Sayurami/GOJO-botton/refs/heads/main/file_00000000f76c61f88a35663bb55c3102.png";
+const { runtime } = require('../lib/functions');
 
+let menuInfoMap = {};
+let menuLastMsgKey = null;
+let menuConnRef = null;
+
+const sections = [
+    { title: "ᴏᴡɴᴇʀ menu 🇱🇰", id: "ownermenu" },
+    { title: "ᴅᴏᴡɴʟᴏᴀᴅ menu 🇱🇰", id: "dlmenu" },
+    { title: "LOGO MENU 🇱🇰", id: "logomenu" },
+    { title: "ᴄᴏɴᴠᴇʀᴛ menu 🇱🇰", id: "convertmenu" },
+    { title: "ɢʀɔʋρ ɱɛɴʎ 🇱🇰", id: "groupmenu" },
+    { title: "ᴀɪ ɱɛɴʎ 🇱🇰", id: "aimenu" },
+    { title: "𝐸𝐯𝐢𝐬𝐞 menu 🇱🇰", id: "animemenu" },
+    { title: "ꜰᴜɴ menu 🇱🇰", id: "funmenu" },
+    { title: "𝐶𝐞𝐧𝐞 menu 🇱🇰", id: "mainmenu" },
+    { title: "𝐾𝐟𝐭𝐞𝐫 ɱɛɴʎ️ 🇱🇰", id: "othermenu" }
+];
 
 cmd({
     pattern: "menu",
-    react: "📂",
     prefix: "/",
-    desc: "Check bot Commands.",
+    react: "📂",
+    desc: "GOJO full Menu List",
     category: "main",
     filename: __filename
-}, async (conn, mek, m, { reply, prefix }) => {
+}, async (conn, mek, m, { prefix, reply }) => {
     try {
+        menuConnRef = conn;
 
-        let teksnya = `
- 𝗛𝗘𝗟𝗟𝗢 𝗜 𝗔𝗠 𝗚𝗢𝗝𝗢 𝗠𝗗 𝗩2 ❯❯  
+        const caption = `
+ 𝐝𝐨𝐫𝐞 𝐀𝐜 𝐘𝐮 𝐚𝐞 𝐌𝐨 𝐏𝐨 𝐵𝐫 ❯❯
 ╭────────────────────●●►
-| *🛠️  𝙑𝙀𝙍𝙎𝙄𝙊𝙉:* ${require("../package.json").version}
-| *📡  𝙈𝙀𝙈𝙊𝙍𝙔:* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB / ${Math.round(require('os').totalmem / 1024 / 1024)}MB
-| *⏱️  𝗥𝗨𝗡𝗧𝗜𝗠𝗘:* ${runtime(process.uptime())}
+| *👷 VERSION:* ${require("../package.json").version}
+| *📡 MEMORY:* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB
+| *⏱️ RUNTIME:* ${runtime(process.uptime())}
 ╰─────────────────────●●►
- *║  🎥❮❮  𝗚𝗢𝗝𝗢 𝗠𝗗 𝗩1 𝗠𝗘𝗡𝗨 𝗟𝗜𝗦𝗧❯❯  🎥 ║*`;
+*🎥 GOJO MENU LIST 🎥*`;
 
-        let imageUrl = "https://raw.githubusercontent.com/Sayurami/GOJO-botton/refs/heads/main/file_00000000f76c61f88a35663bb55c3102.png";
+        const rows = sections.map((item) => ({
+            title: item.title,
+            rowId: `.${item.id}`
+        }));
 
-        let vpsOptions = [
-            { title: "ᴏᴡɴᴇʀ menu 🇱🇰", description: "Bot Owner Only Commands", id: `${prefix}ownermenu` },
-            { title: "ᴅᴏᴡɴʟᴏᴀᴅ menu 🇱🇰", description: "Get Bot Download Menu", id: `${prefix}dlmenu` },
-            { title: "LOGO MENU 🇱🇰", description: "Get Bot logo Menu", id: `${prefix}logomenu` },
-            { title: "ᴄᴏɴᴠᴇʀᴛ menu 🇱🇰", description: "Get Bot Convert Menu", id: `${prefix}convertmenu` },
-            { title: "ɢʀᴏᴜᴘ ᴍᴇɴᴜ 🇱🇰", description: "Get Group Only Commands", id: `${prefix}groupmenu` },
-            { title: "ᴀɪ ᴍᴇɴᴜ 🇱🇰", description: "Get Bot AI Commands List", id: `${prefix}aimenu` },
-            { title: "𝙰𝙽𝙸𝙼𝙴 menu 🇱🇰", description: "Get Bot Search Menu", id: `${prefix}animemenu` },
-            { title: "ꜰᴜɴ menu 🇱🇰", description: "Fun Joke Menu Bot", id: `${prefix}funmenu` },
-            { title: "𝙼𝙰𝙸𝙽 menu 🇱🇰", description: "Owner Only Bug Menu", id: `${prefix}mainmenu` },
-            { title: "𝙾𝚃𝙷𝙴𝚁 ᴍᴇɴᴜ️ 🇱🇰", description: "Random Commands Menu", id: `${prefix}othermenu` }
-        ];
+        if (config.BUTTON === 'true') {
+            const sendObj = {
+                image: { url: imageUrl },
+                text: caption,
+                footer: "© Thenux-AI | GOJO MD V2",
+                buttonText: "Select Menu 🏟️",
+                headerType: 4,
+                sections: [
+                    {
+                        title: "GOJO Bot Menu Categories",
+                        rows: rows
+                    }
+                ]
+            };
+            const sentMsg = await conn.sendMessage(m.chat, sendObj, { quoted: mek });
+            menuLastMsgKey = sentMsg?.key?.id;
+            if (menuLastMsgKey) menuInfoMap[menuLastMsgKey] = sections;
+        } else {
+            let numbered = `${caption}\n━━━━━━━━━━━━━━\n`;
+            numbered += sections.map((s, i) => `*${i + 1}.* ${s.title}`).join('\n');
+            numbered += `\n━━━━━━━━━━━━━━\n_Reply with number to select menu_`;
 
-        let buttonSections = [
-            {
-                title: "List of GOJO MOVIE X Bot Commands",
-                highlight_label: "GOJO MOVIE X",
-                rows: vpsOptions
-            }
-        ];
-cmd({
-    pattern: "ownermenu",
-    react: "♻️",
-    desc: "owner Menu Text List",
-    category: "list",
-    filename: __filename
-}, async (conn, mek, m, { reply, prefix }) => {
-    try {
-        const text = `✳️ *GOJO OWNER MENU* 🎬
+            const sentMsg = await conn.sendMessage(m.chat, {
+                image: { url: imageUrl },
+                caption: numbered
+            }, { quoted: mek });
 
-ඔබට පහත commands භාවිතා කර owner menu ලබාගන්න පුළුවන්:
-
-╭─────────────⭓
-│ 1️⃣ get jid all
-│ ➤ ${prefix}jid
-│
-│ 2️⃣ system 
-│ ➤ ${prefix}system 
-│
-╰─────────────⭓
-
-_ඔබට අවශ්‍ය link එකක් හෝ keyword එකක් එක්කර command එක යොදන්න_`;
-
-        await reply(text);
+            menuLastMsgKey = sentMsg?.key?.id;
+            if (menuLastMsgKey) menuInfoMap[menuLastMsgKey] = sections;
+        }
     } catch (e) {
-        console.error(e);
-        reply(`Error: ${e.message}`);
-    }
-});
-        
-cmd({
-    pattern: "dlmenu",
-    react: "♻️",
-    desc: "Download Menu Text List",
-    category: "download",
-    filename: __filename
-}, async (conn, mek, m, { reply, prefix }) => {
-    try {
-        const text = `🎬 *GOJO DOWNLOAD MENU* 🎬
-
-ඔබට පහත commands භාවිතා කර download කරගන්න පුළුවන්:
-
-╭─────────────⭓
-│ 📥 YouTube Video 
-│ ➤ ${prefix}ytv <link or search>
-│
-│ 🎵 YouTube Song 
-│ ➤ ${prefix}song <link or search>
-│
-│ 🎯 TikTok Video 
-│ ➤ ${prefix}tt <link>
-│
-│ 🎬 Instagram Reel 
-│ ➤ ${prefix}instagram <link>
-│ 
-│ 📽️ Sinhalasub.lk movie
-│ ➤ ${prefix}movie <search>
-│
-│ ⚜️ Sinhala dubbed movie 
-│ ➤ ${prefix}mv <search>
-│
-│ 🧾 Sri Lanka school past papers
-│ ➤ ${prefix}pastpp <search>
-│
-│ 📺 Facebook videos 
-│ ➤ ${prefix}fb <link>
-╰─────────────⭓
-
-_ඔබට අවශ්‍ය link එකක් හෝ keyword එකක් එක්කර command එක යොදන්න_`;
-
-        await reply(text);
-    } catch (e) {
-        console.error(e);
-        reply(`Error: ${e.message}`);
+        console.log(e);
+        reply("❌ Error showing menu");
     }
 });
 
-        let buttons = [
-            {
-                buttonId: "action",
-                buttonText: { displayText: "Select Menu" },
-                type: 4,
-                nativeFlowInfo: {
-                    name: "single_select",
-                    paramsJson: JSON.stringify({
-                        title: "🚨Choose Menu Tab🚨",
-                        sections: buttonSections
-                    })
+if (!global.__menuListHandler) {
+    global.__menuListHandler = true;
+
+    const { setTimeout } = require("timers");
+
+    function waitForMenuConn() {
+        if (!menuConnRef) return setTimeout(waitForMenuConn, 500);
+
+        menuConnRef.ev.on("messages.upsert", async (msgUpdate) => {
+            const msg = msgUpdate.messages?.[0];
+            if (!msg || !msg.key) return;
+
+            if (config.BUTTON === 'true' && msg.message?.listResponseMessage) {
+                const rowId = msg.message.listResponseMessage.singleSelectReply?.selectedRowId;
+                if (rowId) {
+                    menuConnRef.ev.emit('command', {
+                        ...msg,
+                        message: { conversation: rowId }
+                    });
                 }
             }
-        ];
 
-        conn.sendMessage(m.chat, {
-            buttons,
-            headerType: 1,
-            viewOnce: true,
-            caption: teksnya,
-            image: { url: imageUrl },
-            contextInfo: {
-                mentionedJid: [m.sender], 
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    
-                    newsletterName: `GOJO💗`,
-                    serverMessageId: 143
+            if (config.BUTTON !== 'true' && msg.message?.extendedTextMessage) {
+                const stanzaId = msg.message.extendedTextMessage.contextInfo?.stanzaId || menuLastMsgKey;
+                if (!menuInfoMap[stanzaId]) return;
+
+                const input = msg.message.extendedTextMessage.text.trim();
+                const idx = parseInt(input) - 1;
+                if (isNaN(idx) || !menuInfoMap[stanzaId][idx]) {
+                    return await menuConnRef.sendMessage(msg.key.remoteJid, {
+                        text: "❌ Invalid number!"
+                    }, { quoted: msg });
                 }
-            }
-        }, { quoted: mek });
 
-    } catch (e) {
-        console.error(e);
-        reply(`Error: ${e.message}`);
+                const cmdId = menuInfoMap[stanzaId][idx].id;
+                menuConnRef.ev.emit('command', {
+                    ...msg,
+                    message: { conversation: `.${cmdId}` }
+                });
+            }
+        });
     }
-});
+
+    waitForMenuConn();
+}
