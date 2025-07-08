@@ -15,6 +15,6 @@ MODE: process.env.MODE || "public",
 FOOTER: '> ᴘᴏᴡᴇʀᴇᴅ ʙʏ GOJO MD',
 DIRECTION: true,
 IMAGE: process.env.IMAGE || `https://i.ibb.co/B25Ws4nf/temp-image.jpg`,
-LOGO: process.env.LOGO || `https://i.ibb.co/B25Ws4nf/temp-image.jpg`
-
+LOGO: process.env.LOGO || `https://i.ibb.co/B25Ws4nf/temp-image.jpg`,
+BUTTON: process.env.BUTTON || "true",
 };
