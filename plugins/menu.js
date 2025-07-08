@@ -1,11 +1,12 @@
 const { cmd } = require('../lib/command');
 const config = require('../settings');
-const imageUrl = "https://raw.githubusercontent.com/Sayurami/GOJO-botton/refs/heads/main/file_00000000f76c61f88a35663bb55c3102.png";
 const { runtime } = require('../lib/functions');
 
 let menuInfoMap = {};
 let menuLastMsgKey = null;
 let menuConnRef = null;
+
+const imageUrl = "https://raw.githubusercontent.com/Sayurami/GOJO-botton/refs/heads/main/file_00000000f76c61f88a35663bb55c3102.png";
 
 const sections = [
     { title: "ᴏᴡɴᴇʀ menu 🇱🇰", id: "ownermenu" },
@@ -32,7 +33,7 @@ cmd({
         menuConnRef = conn;
 
         const caption = `
- 𝐝𝐨𝐫𝐞 𝐀𝐜 𝐘𝐮 𝐚𝐞 𝐌𝐨 𝐏𝐨 𝐵𝐫 ❯❯
+𝐝𝐨𝐫𝐞 𝐀𝐜 𝐘𝐮 𝐚𝐞 𝐌𝐨 𝐏𝐨 𝐵𝐫 ❯❯
 ╭────────────────────●●►
 | *👷 VERSION:* ${require("../package.json").version}
 | *📡 MEMORY:* ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB
@@ -40,7 +41,7 @@ cmd({
 ╰─────────────────────●●►
 *🎥 GOJO MENU LIST 🎥*`;
 
-        const rows = sections.map((item) => ({
+        const rows = sections.map((item, i) => ({
             title: item.title,
             rowId: `.${item.id}`
         }));
@@ -81,9 +82,9 @@ cmd({
     }
 });
 
+// Global reply handler
 if (!global.__menuListHandler) {
     global.__menuListHandler = true;
-
     const { setTimeout } = require("timers");
 
     function waitForMenuConn() {
